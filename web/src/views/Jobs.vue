@@ -68,6 +68,7 @@
         </el-table-column>
         <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
+            <el-button size="small" type="primary" link @click="handleViewDetail(row)">详情</el-button>
             <el-button size="small" type="primary" link @click="handleEdit(row)">编辑</el-button>
             <el-button size="small" type="success" link @click="handleRun(row)">执行</el-button>
             <el-dropdown @command="(cmd: string) => handleMoreCommand(cmd, row)" trigger="click">
@@ -424,6 +425,10 @@ const previewRuns = async () => {
 // --- 创建/编辑 ---
 const handleCreate = () => {
   router.push('/jobs/new')
+}
+
+const handleViewDetail = (row: any) => {
+  router.push(`/jobs/${row.id}`)
 }
 
 const handleEdit = (row: any) => {
