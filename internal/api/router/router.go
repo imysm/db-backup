@@ -118,6 +118,15 @@ func Setup(cfg *config.Config, db *gorm.DB, staticPath string) *gin.Engine {
 		// 统计
 		statsHandler := handler.NewStatsHandler(db)
 		v1.GET("/stats", statsHandler.GetStats)
+
+		// 审批管理
+		approvalHandler := handler.NewApprovalHandler(db)
+		v1.GET("/approvals", approvalHandler.ListApprovals)
+		v1.GET("/approvals/pending/count", approvalHandler.PendingCount)
+		v1.GET("/approvals/:id", approvalHandler.GetApproval)
+		v1.POST("/approvals/:id/approve", approvalHandler.Approve)
+		v1.POST("/approvals/:id/reject", approvalHandler.Reject)
+		v1.POST("/approvals/:id/cancel", approvalHandler.Cancel)
 	}
 
 	return r

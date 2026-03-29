@@ -60,6 +60,10 @@
           <el-icon><Warning /></el-icon>
           <template #title>告警中心</template>
         </el-menu-item>
+        <el-menu-item index="/approvals">
+          <el-icon><DocumentChecked /></el-icon>
+          <template #title>审批管理</template>
+        </el-menu-item>
         <el-menu-item index="/settings">
           <el-icon><Setting /></el-icon>
           <template #title>系统设置</template>
@@ -103,7 +107,7 @@ import { ElMessageBox } from 'element-plus'
 import {
   DataAnalysis, FolderOpened, Document, RefreshRight,
   Setting, CircleCheck, Coin, Fold, Expand, SwitchButton,
-  Plus, Box, Tools, Warning
+  Plus, Box, Tools, Warning, DocumentChecked
 } from '@element-plus/icons-vue'
 
 const route = useRoute()

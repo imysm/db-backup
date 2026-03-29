@@ -93,6 +93,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '告警中心' }
       },
       {
+        path: '/approvals',
+        name: 'Approvals',
+        component: () => import('@/views/Approval.vue'),
+        meta: { title: '审批管理' }
+      },
+      {
         path: '/settings',
         name: 'Settings',
         component: () => import('@/views/Settings.vue'),
