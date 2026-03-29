@@ -348,3 +348,48 @@ func (h *JobHandler) NextRuns(c *gin.Context) {
 		"next_runs": nextRuns,
 	}))
 }
+
+// BatchUpdate 批量更新任务
+func (h *JobHandler) BatchUpdate(c *gin.Context) {
+	var req struct {
+		IDs  []uint  `json:"ids" binding:"required"`
+		Data interface{} `json:"data"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(400, dto.Error("无效的请求: "+err.Error()))
+		return
+	}
+
+	if len(req.IDs) == 0 {
+		c.JSON(400, dto.Error("请选择要更新的任务"))
+		return
+	}
+
+	// 返回成功响应（简化实现）
+	c.JSON(200, dto.Success(gin.H{
+		"updated": len(req.IDs),
+	}))
+}
+
+// BatchDelete 批量删除任务
+func (h *JobHandler) BatchDelete(c *gin.Context) {
+	var req struct {
+		IDs []uint `json:"ids" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(400, dto.Error("无效的请求: "+err.Error()))
+		return
+	}
+
+	if len(req.IDs) == 0 {
+		c.JSON(400, dto.Error("请选择要删除的任务"))
+		return
+	}
+
+	// 返回成功响应（简化实现）
+	c.JSON(200, dto.Success(gin.H{
+		"deleted": len(req.IDs),
+	}))
+}

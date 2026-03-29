@@ -65,6 +65,9 @@ func Setup(cfg *config.Config, db *gorm.DB, staticPath string) *gin.Engine {
 			jobs.POST("/:id/run", RateLimitMiddleware(10, 10, 10000), jobHandler.Run)
 			jobs.POST("/:id/test-connection", jobHandler.TestConnection)
 			jobs.GET("/:id/next-runs", jobHandler.NextRuns)
+			// 批量操作
+			jobs.PUT("/batch", jobHandler.BatchUpdate)
+			jobs.POST("/batch-delete", jobHandler.BatchDelete)
 		}
 
 		// 审计日志
