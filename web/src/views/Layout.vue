@@ -23,6 +23,10 @@
           <el-icon><FolderOpened /></el-icon>
           <template #title>备份任务</template>
         </el-menu-item>
+        <el-menu-item index="/jobs/new">
+          <el-icon><Plus /></el-icon>
+          <template #title>创建任务</template>
+        </el-menu-item>
         <el-menu-item index="/records">
           <el-icon><Document /></el-icon>
           <template #title>备份记录</template>
@@ -35,6 +39,23 @@
           <el-icon><RefreshRight /></el-icon>
           <template #title>恢复管理</template>
         </el-menu-item>
+        <el-sub-menu index="/storage">
+          <template #title>
+            <el-icon><Box /></el-icon>
+            <span>存储管理</span>
+          </template>
+          <el-menu-item index="/storage">存储概览</el-menu-item>
+          <el-menu-item index="/storage-forecast">容量预测</el-menu-item>
+        </el-sub-menu>
+        <el-sub-menu index="/system">
+          <template #title>
+            <el-icon><Tools /></el-icon>
+            <span>系统工具</span>
+          </template>
+          <el-menu-item index="/health">系统体检</el-menu-item>
+          <el-menu-item index="/backup-impact">影响分析</el-menu-item>
+          <el-menu-item index="/alert-rules">告警规则</el-menu-item>
+        </el-sub-menu>
         <el-menu-item index="/settings">
           <el-icon><Setting /></el-icon>
           <template #title>系统设置</template>
@@ -77,7 +98,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
 import {
   DataAnalysis, FolderOpened, Document, RefreshRight,
-  Setting, CircleCheck, Coin, Fold, Expand, SwitchButton
+  Setting, CircleCheck, Coin, Fold, Expand, SwitchButton,
+  Plus, Box, Tools
 } from '@element-plus/icons-vue'
 
 const route = useRoute()

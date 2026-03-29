@@ -268,8 +268,22 @@ const handleVerify = async (row: any) => {
   }
 }
 
-const handleRestore = (row: any) => {
-  router.push({ path: '/restore', query: { recordId: row.id } })
+const handleRestore = async (row: any) => {
+  try {
+    await ElMessageBox.confirm(
+      `确定要恢复备份 "${row.name || row.job_name}" 吗？\n\n备份时间: ${row.started_at}\n文件大小: ${formatSize(row.file_size)}\n\n⚠️ 此操作将覆盖现有数据！`,
+      '危险操作：恢复数据库',
+      {
+        type: 'warning',
+        confirmButtonText: '确认恢复',
+        cancelButtonText: '取消',
+        dangerouslyUseHTMLString: true
+      }
+    )
+    router.push({ path: '/restore', query: { recordId: row.id } })
+  } catch {
+    // 用户取消
+  }
 }
 
 const handleDelete = async (row: any) => {

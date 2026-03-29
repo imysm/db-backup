@@ -293,9 +293,12 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import { Search, Plus } from '@element-plus/icons-vue'
 import { jobAPI } from '@/api'
+
+const router = useRouter()
 
 // --- 列表状态 ---
 const loading = ref(false)
@@ -420,11 +423,7 @@ const previewRuns = async () => {
 
 // --- 创建/编辑 ---
 const handleCreate = () => {
-  isEdit.value = false
-  form.value = defaultForm()
-  Object.keys(storageConfig).forEach(k => delete storageConfig[k])
-  nextRuns.value = []
-  drawerVisible.value = true
+  router.push('/jobs/new')
 }
 
 const handleEdit = (row: any) => {

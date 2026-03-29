@@ -108,6 +108,33 @@
         </el-table-column>
       </el-table>
     </el-card>
+
+    <!-- 快捷操作 -->
+    <el-card shadow="hover" style="margin-top: 16px">
+      <template #header>
+        <span>快捷操作</span>
+      </template>
+      <div class="quick-actions">
+        <el-button type="primary" @click="$router.push('/jobs/new')">
+          <el-icon><Plus /></el-icon>新建任务
+        </el-button>
+        <el-button @click="$router.push('/records')">
+          <el-icon><Document /></el-icon>查看记录
+        </el-button>
+        <el-button @click="$router.push('/restore')">
+          <el-icon><RefreshRight /></el-icon>恢复备份
+        </el-button>
+        <el-button @click="$router.push('/storage')">
+          <el-icon><Box /></el-icon>存储管理
+        </el-button>
+        <el-button type="warning" @click="$router.push('/health')">
+          <el-icon><Clock /></el-icon>系统体检
+        </el-button>
+        <el-button type="info" @click="$router.push('/storage-forecast')">
+          <el-icon><TrendCharts /></el-icon>容量预测
+        </el-button>
+      </div>
+    </el-card>
   </div>
 </template>
 
@@ -119,7 +146,7 @@ import { BarChart, PieChart } from 'echarts/charts'
 import { GridComponent, TooltipComponent, LegendComponent, TitleComponent } from 'echarts/components'
 import VChart from 'vue-echarts'
 import { statsAPI, recordAPI } from '@/api'
-import { Calendar, TrendCharts, Coin, WarningFilled } from '@element-plus/icons-vue'
+import { Calendar, TrendCharts, Coin, WarningFilled, Plus, Document, RefreshRight, Box, Clock } from '@element-plus/icons-vue'
 
 use([CanvasRenderer, BarChart, PieChart, GridComponent, TooltipComponent, LegendComponent, TitleComponent])
 
