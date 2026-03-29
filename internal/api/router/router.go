@@ -71,10 +71,18 @@ func Setup(cfg *config.Config, db *gorm.DB, staticPath string) *gin.Engine {
 		v1.POST("/alert/channels", alertHandler.CreateChannel)
 		v1.PUT("/alert/channels/:id", alertHandler.UpdateChannel)
 		v1.DELETE("/alert/channels/:id", alertHandler.DeleteChannel)
+		v1.POST("/alert/channels/:id/test", alertHandler.TestChannel)
 		v1.GET("/alert/rules", alertHandler.ListRules)
 		v1.POST("/alert/rules", alertHandler.CreateRule)
 		v1.PUT("/alert/rules/:id", alertHandler.UpdateRule)
 		v1.DELETE("/alert/rules/:id", alertHandler.DeleteRule)
+		v1.POST("/alert/rules/:id/copy", alertHandler.CopyRule)
+		v1.GET("/alerts", alertHandler.ListAlerts)
+		v1.GET("/alerts/:id", alertHandler.GetAlert)
+		v1.POST("/alerts/:id/acknowledge", alertHandler.AcknowledgeAlert)
+		v1.POST("/alerts/:id/resolve", alertHandler.ResolveAlert)
+		v1.GET("/dashboard/alerts/overview", alertHandler.AlertOverview)
+		v1.GET("/dashboard/alerts/stats", alertHandler.AlertStats)
 
 		// 记录管理
 		records := v1.Group("/records")

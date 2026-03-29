@@ -56,6 +56,10 @@
           <el-menu-item index="/backup-impact">影响分析</el-menu-item>
           <el-menu-item index="/alert-rules">告警规则</el-menu-item>
         </el-sub-menu>
+        <el-menu-item index="/alerts">
+          <el-icon><Warning /></el-icon>
+          <template #title>告警中心</template>
+        </el-menu-item>
         <el-menu-item index="/settings">
           <el-icon><Setting /></el-icon>
           <template #title>系统设置</template>
@@ -99,7 +103,7 @@ import { ElMessageBox } from 'element-plus'
 import {
   DataAnalysis, FolderOpened, Document, RefreshRight,
   Setting, CircleCheck, Coin, Fold, Expand, SwitchButton,
-  Plus, Box, Tools
+  Plus, Box, Tools, Warning
 } from '@element-plus/icons-vue'
 
 const route = useRoute()

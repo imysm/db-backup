@@ -87,6 +87,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '备份影响分析' }
       },
       {
+        path: '/alerts',
+        name: 'Alerts',
+        component: () => import('@/views/Alerts.vue'),
+        meta: { title: '告警中心' }
+      },
+      {
         path: '/settings',
         name: 'Settings',
         component: () => import('@/views/Settings.vue'),
