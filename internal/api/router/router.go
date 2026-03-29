@@ -48,6 +48,10 @@ func Setup(cfg *config.Config, db *gorm.DB, staticPath string) *gin.Engine {
 		v1.GET("/ws/log", func(c *gin.Context) {
 			ws.ServeWS(hub, c.Writer, c.Request)
 		})
+
+		// SSE 日志流（需要 task_id 参数）
+		logStreamHandler := handler.NewLogStreamHandler()
+		v1.GET("/logs/stream", logStreamHandler.SubscribeLog)
 		// 任务管理
 		jobs := v1.Group("/jobs")
 		{
