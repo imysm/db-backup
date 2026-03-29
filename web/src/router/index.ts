@@ -27,6 +27,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '备份任务' }
       },
       {
+        path: '/jobs/new',
+        name: 'JobWizard',
+        component: () => import('@/views/JobWizard.vue'),
+        meta: { title: '创建任务' }
+      },
+      {
         path: '/records',
         name: 'Records',
         component: () => import('@/views/Records.vue'),
@@ -43,6 +49,36 @@ const routes: RouteRecordRaw[] = [
         name: 'Restore',
         component: () => import('@/views/Restore.vue'),
         meta: { title: '恢复管理' }
+      },
+      {
+        path: '/storage',
+        name: 'Storage',
+        component: () => import('@/views/Storage.vue'),
+        meta: { title: '存储管理' }
+      },
+      {
+        path: '/alert-rules',
+        name: 'AlertRules',
+        component: () => import('@/views/AlertRules.vue'),
+        meta: { title: '告警规则' }
+      },
+      {
+        path: '/health',
+        name: 'HealthCheck',
+        component: () => import('@/views/HealthCheck.vue'),
+        meta: { title: '系统体检' }
+      },
+      {
+        path: '/storage-forecast',
+        name: 'StorageForecast',
+        component: () => import('@/views/StorageForecast.vue'),
+        meta: { title: '容量预测' }
+      },
+      {
+        path: '/backup-impact',
+        name: 'BackupImpact',
+        component: () => import('@/views/BackupImpact.vue'),
+        meta: { title: '备份影响分析' }
       },
       {
         path: '/settings',
