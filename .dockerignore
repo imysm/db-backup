@@ -1,0 +1,11 @@
+.git
+.gitignore
+*.md
+docs/
+tests/
+tmp/
+.vscode/
+.idea/
+*.test
+*.out
+coverage.html

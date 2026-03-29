@@ -1,0 +1,44 @@
+[Unit]
+Description=DB Backup Service - 数据库备份系统
+Documentation=https://github.com/imysm/db-backup
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=db-backup
+Group=db-backup
+
+# 环境变量文件
+EnvironmentFile=-/etc/db-backup/.env
+
+# 工作目录
+WorkingDirectory=/var/lib/db-backup
+
+# 配置文件
+ExecStart=/usr/local/bin/db-backup -config /etc/db-backup/config.yaml
+
+# 重启策略
+Restart=on-failure
+RestartSec=5
+StartLimitBurst=5
+StartLimitIntervalSec=60
+
+# 资源限制
+LimitNOFILE=65536
+LimitNPROC=4096
+
+# 安全加固
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/db-backup /var/log/db-backup
+PrivateTmp=true
+
+# 日志
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=db-backup
+
+[Install]
+WantedBy=multi-user.target
