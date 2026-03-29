@@ -11,6 +11,7 @@ import (
 	"github.com/imysm/db-backup/internal/config"
 	"github.com/imysm/db-backup/internal/crypto"
 	"github.com/imysm/db-backup/internal/middleware"
+	"github.com/imysm/db-backup/internal/ws"
 	"gorm.io/gorm"
 )
 
@@ -41,6 +42,12 @@ func Setup(cfg *config.Config, db *gorm.DB, staticPath string) *gin.Engine {
 	authMiddleware := middleware.APIKeyAuth(cfg.Global.APIKeys)
 	v1 := r.Group("/api/v1", authMiddleware)
 	{
+		// WebSocket 日志流（需要 task_id 参数）
+		hub := ws.NewHub()
+		go hub.Run()
+		v1.GET("/ws/log", func(c *gin.Context) {
+			ws.ServeWS(hub, c.Writer, c.Request)
+		})
 		// 任务管理
 		jobs := v1.Group("/jobs")
 		{
