@@ -60,6 +60,22 @@ func Setup(cfg *config.Config, db *gorm.DB, staticPath string) *gin.Engine {
 		healthHandler := handler.NewHealthCheckHandler(db)
 		v1.GET("/health/report", healthHandler.GetHealthReport)
 
+		// 存储管理
+		storageHandler := handler.NewStorageHandler(db)
+		v1.GET("/storage/stats", storageHandler.GetStats)
+		v1.GET("/storage/objects", storageHandler.ListObjects)
+
+		// 告警管理
+		alertHandler := handler.NewAlertHandler(db)
+		v1.GET("/alert/channels", alertHandler.ListChannels)
+		v1.POST("/alert/channels", alertHandler.CreateChannel)
+		v1.PUT("/alert/channels/:id", alertHandler.UpdateChannel)
+		v1.DELETE("/alert/channels/:id", alertHandler.DeleteChannel)
+		v1.GET("/alert/rules", alertHandler.ListRules)
+		v1.POST("/alert/rules", alertHandler.CreateRule)
+		v1.PUT("/alert/rules/:id", alertHandler.UpdateRule)
+		v1.DELETE("/alert/rules/:id", alertHandler.DeleteRule)
+
 		// 记录管理
 		records := v1.Group("/records")
 		{
