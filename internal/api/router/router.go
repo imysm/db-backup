@@ -67,6 +67,13 @@ func Setup(cfg *config.Config, db *gorm.DB, staticPath string) *gin.Engine {
 			jobs.GET("/:id/next-runs", jobHandler.NextRuns)
 		}
 
+		// 审计日志
+		auditHandler := handler.NewAuditHandler(db)
+		v1.GET("/audit/logs", auditHandler.List)
+		v1.GET("/audit/logs/:id", auditHandler.Get)
+		v1.GET("/audit/statistics", auditHandler.GetStatistics)
+		v1.GET("/audit/user-activity", auditHandler.GetUserActivity)
+
 		// 健康报告
 		healthHandler := handler.NewHealthCheckHandler(db)
 		v1.GET("/health/report", healthHandler.GetHealthReport)
