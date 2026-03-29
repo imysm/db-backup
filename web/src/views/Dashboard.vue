@@ -133,6 +133,9 @@
         <el-button type="info" @click="$router.push('/storage-forecast')">
           <el-icon><TrendCharts /></el-icon>容量预测
         </el-button>
+        <el-button type="success" @click="$router.push('/backup-impact')">
+          <el-icon><Cpu /></el-icon>影响分析
+        </el-button>
       </div>
     </el-card>
   </div>
@@ -146,7 +149,7 @@ import { BarChart, PieChart } from 'echarts/charts'
 import { GridComponent, TooltipComponent, LegendComponent, TitleComponent } from 'echarts/components'
 import VChart from 'vue-echarts'
 import { statsAPI, recordAPI } from '@/api'
-import { Calendar, TrendCharts, Coin, WarningFilled, Plus, Document, RefreshRight, Box, Clock } from '@element-plus/icons-vue'
+import { Calendar, TrendCharts, Coin, WarningFilled, Plus, Document, RefreshRight, Box, Clock, Cpu } from '@element-plus/icons-vue'
 
 use([CanvasRenderer, BarChart, PieChart, GridComponent, TooltipComponent, LegendComponent, TitleComponent])
 
