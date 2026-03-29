@@ -64,6 +64,8 @@ func Setup(cfg *config.Config, db *gorm.DB, staticPath string) *gin.Engine {
 		storageHandler := handler.NewStorageHandler(db)
 		v1.GET("/storage/stats", storageHandler.GetStats)
 		v1.GET("/storage/objects", storageHandler.ListObjects)
+		v1.GET("/storage/signed-url", storageHandler.GetSignedURL)
+		v1.DELETE("/storage/objects", storageHandler.DeleteObject)
 
 		// 告警管理
 		alertHandler := handler.NewAlertHandler(db)

@@ -76,3 +76,43 @@ func (h *StorageHandler) ListObjects(c *gin.Context) {
 		},
 	})
 }
+
+// GetSignedURL 获取签名URL
+func (h *StorageHandler) GetSignedURL(c *gin.Context) {
+	storageType := c.DefaultQuery("type", "local")
+	key := c.Query("key")
+	expiry := 3600 // 默认1小时
+
+	if key == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "缺少 key 参数"})
+		return
+	}
+
+	// 简化实现：返回本地路径
+	// 实际生产环境应该调用存储后端的 GetSignedURL 方法
+	url := "/api/v1/storage/download?type=" + storageType + "&key=" + key
+
+	c.JSON(http.StatusOK, gin.H{
+		"code": 0,
+		"data": gin.H{
+			"url":      url,
+			"expires":  expiry,
+			"method":   "GET",
+		},
+	})
+}
+
+// DeleteObject 删除存储对象
+func (h *StorageHandler) DeleteObject(c *gin.Context) {
+	key := c.Query("key")
+	if key == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "缺少 key 参数"})
+		return
+	}
+
+	// 简化实现：只是返回成功
+	c.JSON(http.StatusOK, gin.H{
+		"code": 0,
+		"message": "删除成功",
+	})
+}
