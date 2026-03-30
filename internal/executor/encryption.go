@@ -11,6 +11,8 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+
+	"github.com/imysm/db-backup/internal/model"
 )
 
 // sha256HashHex 计算 SHA256 校验和 (hex 编码)
@@ -297,4 +299,87 @@ func ValidateEncryptionKey(key string) error {
 		return fmt.Errorf("加密密钥长度必须为 32 字节（AES-256），当前为 %d 字节", len(keyBytes))
 	}
 	return nil
+}
+
+// EncryptBackupFile 加密备份文件（根据 EncryptionConfig）
+// inputPath: 原始备份文件路径
+// 返回加密后的文件路径，如果未启用加密则返回原路径
+func EncryptBackupFile(inputPath string, encConfig model.EncryptionConfig) (string, error) {
+	if !encConfig.Enabled || encConfig.Key == "" {
+		return inputPath, nil
+	}
+
+	// 获取密钥（支持从环境变量读取）
+	key := encConfig.Key
+	if encConfig.KeyEnv != "" {
+		key = os.Getenv(encConfig.KeyEnv)
+		if key == "" {
+			return "", fmt.Errorf("从环境变量 %s 读取加密密钥失败", encConfig.KeyEnv)
+		}
+	}
+
+	// 验证密钥
+	if err := ValidateEncryptionKey(key); err != nil {
+		return "", err
+	}
+
+	// 生成加密文件路径
+	ext := filepath.Ext(inputPath)
+	encryptedPath := inputPath[:len(inputPath)-len(ext)] + ".enc"
+
+	// 加密文件
+	if err := EncryptFile(inputPath, encryptedPath, key); err != nil {
+		return "", fmt.Errorf("加密备份文件失败: %w", err)
+	}
+
+	// 删除原文件
+	if err := os.Remove(inputPath); err != nil {
+		return "", fmt.Errorf("删除原始备份文件失败: %w", err)
+	}
+
+	return encryptedPath, nil
+}
+
+// DecryptBackupFile 解密备份文件（根据 EncryptionConfig）
+// inputPath: 加密的备份文件路径
+// 返回解密后的文件路径，如果未启用加密则返回原路径
+func DecryptBackupFile(inputPath string, encConfig model.EncryptionConfig) (string, error) {
+	if !encConfig.Enabled || encConfig.Key == "" {
+		return inputPath, nil
+	}
+
+	// 检查是否是加密文件
+	ext := filepath.Ext(inputPath)
+	if ext != ".enc" {
+		return inputPath, nil
+	}
+
+	// 获取密钥（支持从环境变量读取）
+	key := encConfig.Key
+	if encConfig.KeyEnv != "" {
+		key = os.Getenv(encConfig.KeyEnv)
+		if key == "" {
+			return "", fmt.Errorf("从环境变量 %s 读取加密密钥失败", encConfig.KeyEnv)
+		}
+	}
+
+	// 验证密钥
+	if err := ValidateEncryptionKey(key); err != nil {
+		return "", err
+	}
+
+	// 生成解密文件路径
+	decryptedPath := inputPath[:len(inputPath)-4] // 去掉 .enc
+
+	// 解密文件
+	if err := DecryptFile(inputPath, decryptedPath, key); err != nil {
+		return "", fmt.Errorf("解密备份文件失败: %w", err)
+	}
+
+	// 删除加密文件
+	if err := os.Remove(inputPath); err != nil {
+		return "", fmt.Errorf("删除加密备份文件失败: %w", err)
+	}
+
+	return decryptedPath, nil
 }

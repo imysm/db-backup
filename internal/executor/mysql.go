@@ -129,6 +129,18 @@ func (e *MySQLExecutor) Backup(ctx context.Context, task *model.BackupTask, writ
 		}
 	}
 
+	// 处理加密
+	if task.Storage.Encryption.Enabled {
+		encryptedPath, err := EncryptBackupFile(finalPath, task.Storage.Encryption)
+		if err != nil {
+			return failResult(task.ID, traceID, startTime, fmt.Errorf("加密备份文件失败: %w", err)), err
+		}
+		finalPath = encryptedPath
+		if writer != nil {
+			writer.WriteString(fmt.Sprintf("[%s] 加密完成: %s\n", time.Now().Format("15:04:05"), finalPath))
+		}
+	}
+
 	// 获取文件信息
 	fileInfo, err := os.Stat(finalPath)
 	if err != nil {
