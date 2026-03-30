@@ -1,153 +1,152 @@
 # db-backup
 
-企业级多源数据库备份系统，支持 MySQL、PostgreSQL、MongoDB、SQL Server、Oracle 五种主流数据库的备份与恢复。
+<div align="center">
 
-## 特性
+**企业级多源数据库备份系统**，支持 MySQL、PostgreSQL、MongoDB、SQL Server、Oracle。
 
-- **多数据库支持**: MySQL、PostgreSQL、MongoDB、SQL Server、Oracle
-- **全量/增量备份**: 支持 binlog、WAL、oplog 等增量备份方式
-- **多种存储后端**: 本地存储、S3/MinIO、阿里云 OSS、腾讯云 COS
-- **Web 管理控制台**: 任务配置、实时日志、历史记录
-- **AES-256-GCM 加密**: 支持密钥哈希验证，密钥长度强制校验
-- **压缩支持**: gzip 压缩，可配置压缩级别
-- **WebSocket 实时日志**: 备份进度实时推送
-- **Prometheus 监控**: 内置监控指标
-- **安全加固**: SQL 注入防护、密码安全传递、路径遍历防护、登录限速
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Go Version](https://img.shields.io/badge/Go-1.22+-00ADD8.svg)](https://golang.org/)
+[![Stars](https://img.shields.io/github/stars/imysm/db-backup?style=social)](https://github.com/imysm/db-backup)
 
-## 快速开始
-
-```bash
-# 1. 克隆项目
-git clone https://github.com/imysm/db-backup.git
-cd db-backup
-
-# 2. 构建
-go build -o db-backup ./cmd/server
-
-# 3. 创建配置文件
-cat > configs/config.yaml << EOF
-global:
-  work_dir: /tmp/db-backup
-tasks:
-  - id: mysql-backup
-    database:
-      type: mysql
-      host: localhost
-      port: 3306
-      username: root
-      password: password
-      database: mydb
-    schedule: "0 2 * * *"
-EOF
-
-# 4. 验证配置
-./db-backup -config configs/config.yaml -validate
-
-# 5. 执行备份
-./db-backup -config configs/config.yaml -run mysql-backup
-```
-
-详细步骤请参阅 [5 分钟快速上手](docs/quick-start.md)。
-
-### 前端构建
-
-- [前端打包说明](docs/frontend-build.md) - 前端构建、部署、常见问题
-
-## 文档
-
-### 快速入门
-- [5 分钟快速上手](docs/quick-start.md) - 快速启动第一次备份
-- [完整安装部署](docs/getting-started.md) - 生产环境部署指南
-
-### 用户手册
-- [概述和核心概念](docs/user-guide/overview.md) - 系统核心概念
-- [Web 控制台使用指南](docs/user-guide/web-console.md) - 控制台完整操作手册
-- [任务管理](docs/user-guide/jobs.md) - 任务 CRUD + Cron 表达式
-- [备份记录](docs/user-guide/records.md) - 备份记录查询和管理
-- [数据恢复](docs/user-guide/restore.md) - 本机/异机/测试恢复
-- [通知配置](docs/user-guide/notifications.md) - 钉钉/飞书/邮件/企微配置
-- [安全配置](docs/user-guide/security.md) - 加密/登录/存储安全
-
-### 运维指南
-- [部署指南](docs/ops-guide/deployment.md) - 单机/高可用/Docker/K8s
-- [配置详解](docs/ops-guide/configuration.md) - config.yaml 完整详解
-- [监控告警](docs/ops-guide/monitoring.md) - Prometheus + Grafana + 告警
-- [备份策略](docs/ops-guide/backup.md) - 各数据库备份策略
-
-### 开发文档
-- [架构设计](docs/dev-guide/architecture.md) - 架构设计 + 数据流
-- [API 参考](docs/dev-guide/api.md) - 完整 RESTful API 参考
-- [开发规范](docs/dev-guide/contributing.md) - 开发规范 + 测试 + 提交
-
-### 设计文档
-- [关于项目](docs/about.md) - 项目介绍、特性、架构、致谢
-- [系统设计](docs/DESIGN.md) - 系统架构设计
-- [安全功能文档](docs/security.md) - 安全功能详解
-
-## 支持的数据库
-
-| 数据库 | 全量备份 | 增量备份 | 压缩 | 恢复 |
-|--------|----------|----------|------|------|
-| MySQL | ✅ mysqldump | ✅ binlog | ✅ | ✅ |
-| PostgreSQL | ✅ pg_dump | ✅ WAL | ✅ | ✅ |
-| MongoDB | ✅ mongodump | ✅ oplog | ✅ | ✅ |
-| SQL Server | ✅ BACKUP | ✅ 差异/日志 | ✅ | ✅ |
-| Oracle | ✅ expdp/RMAN | ✅ RMAN | ✅ | ✅ |
-
-## 支持的存储
-
-| 存储 | 状态 | 说明 |
-|------|------|------|
-| 本地存储 | ✅ | 存储到本地磁盘 |
-| S3/MinIO | ✅ | 兼容 S3 协议 |
-| 阿里云 OSS | ✅ | 阿里云对象存储 |
-| 腾讯云 COS | ✅ | 腾讯云对象存储 |
-
-## API 接口
-
-```
-GET  /health              # 健康检查
-GET  /api/jobs            # 任务列表
-POST /api/jobs            # 创建任务
-GET  /api/jobs/:id        # 任务详情
-PUT  /api/jobs/:id        # 更新任务
-DELETE /api/jobs/:id      # 删除任务
-POST /api/jobs/:id/run    # 立即执行
-GET  /api/records         # 备份记录
-POST /api/restore         # 执行恢复
-POST /api/verify/:id      # 验证备份
-GET  /ws                  # WebSocket 实时日志
-GET  /metrics             # Prometheus 指标
-```
-
-详细 API 文档请参阅 [API 参考](docs/dev-guide/api.md)。
-
-## 环境变量
-
-| 变量 | 说明 | 默认值 |
-|------|------|--------|
-| `DB_BACKUP_TEMP_DIR` | 临时目录 | `/tmp/db-backup` |
-| `DB_BACKUP_KEEP_TEMP` | 保留临时文件 | `false` |
-
-## 开发
-
-```bash
-# 运行测试
-go test ./...
-
-# 查看覆盖率
-go test -cover ./...
-
-# 构建
-go build -o db-backup ./cmd/server
-```
-
-详细开发指南请参阅 [开发规范](docs/dev-guide/contributing.md)。
-
-## License
-
-MIT
+</div>
 
 ---
 
-*最后更新: 2026-03-30*
+## ✨ 特性
+
+- 🔐 **AES-256-GCM 加密** — 密钥强制 32 字节校验
+- 🛡️ **安全加固** — SQL 注入防护、密码安全传递、登录限速
+- 📦 **多数据库** — MySQL、PostgreSQL、MongoDB、SQL Server、Oracle
+- ☁️ **多存储后端** — 本地、S3、OSS、COS
+- 🌐 **Web 控制台** — 任务配置、实时日志、历史记录
+- 📊 **Prometheus 监控** — 内置监控指标
+
+---
+
+## 🚀 快速开始
+
+### Docker（推荐）
+
+```bash
+docker run -d \
+  --name db-backup \
+  -p 8080:8080 \
+  -v /data/backups:/data/backups \
+  imysm/db-backup:latest
+```
+
+### 二进制
+
+```bash
+# 下载
+wget https://github.com/imysm/db-backup/releases/latest/db-backup-linux-amd64.tar.gz
+tar -xzf db-backup-linux-amd64.tar.gz
+
+# 启动
+./db-backup -web -static ./web/dist -port 8080
+```
+
+访问 **http://localhost:8080**，默认账户 `admin` / `admin123`。
+
+详细步骤请参阅 [快速入门](docs/01-quick-start.md)。
+
+---
+
+## 📖 文档
+
+| 文档 | 说明 |
+|------|------|
+| [快速入门](docs/01-quick-start.md) | 5 分钟快速上手 |
+| [安装指南](docs/02-installation.md) | Docker/二进制/K8s 安装 |
+| [部署指南](docs/03-deployment.md) | Nginx 反代、高可用部署 |
+| [配置详解](docs/04-configuration.md) | 完整配置项说明 |
+| [Web 控制台](docs/05-usage/web-console.md) | 控制台使用手册 |
+| [安全配置](docs/06-security.md) | 加密、密码、登录安全 |
+| [API 参考](docs/07-api.md) | RESTful API 文档 |
+| [常见问题](docs/08-faq.md) | FAQ 故障排查 |
+
+---
+
+## 🗄️ 支持的数据库
+
+| 数据库 | 全量备份 | 增量备份 | 压缩 | 加密 | 恢复 |
+|--------|:--------:|:--------:|:----:|:----:|:----:|
+| MySQL | ✅ | ✅ | ✅ | ✅ | ✅ |
+| PostgreSQL | ✅ | ✅ | ✅ | ✅ | ✅ |
+| MongoDB | ✅ | ✅ | ✅ | ✅ | ✅ |
+| SQL Server | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Oracle | ✅ | — | ✅ | ✅ | ✅ |
+
+---
+
+## ☁️ 支持的存储
+
+| 存储 | 说明 |
+|------|------|
+| 本地存储 | 磁盘路径 |
+| S3 / MinIO | AWS S3 兼容 |
+| 阿里云 OSS | 国内访问快 |
+| 腾讯云 COS | 国内访问快 |
+
+---
+
+## 🔧 构建（源码）
+
+```bash
+# 克隆
+git clone https://github.com/imysm/db-backup.git
+cd db-backup
+
+# 编译前端
+cd web && npm install && npm run build && cd ..
+
+# 编译后端
+go build -o db-backup ./cmd/server
+
+# 运行
+./db-backup -web -static ./web/dist
+```
+
+---
+
+## 📊 API
+
+```
+GET  /health           # 健康检查
+GET  /api/jobs        # 任务列表
+POST /api/jobs        # 创建任务
+GET  /api/jobs/:id    # 任务详情
+PUT  /api/jobs/:id    # 更新任务
+DELETE /api/jobs/:id  # 删除任务
+POST /api/jobs/:id/run  # 立即执行
+GET  /api/records     # 备份记录
+POST /api/restore     # 执行恢复
+GET  /metrics         # Prometheus 指标
+GET  /ws              # WebSocket 日志
+```
+
+详细请参阅 [API 参考](docs/07-api.md)。
+
+---
+
+## 🤝 贡献
+
+欢迎提交 Issue 和 Pull Request！
+
+1. Fork 本仓库
+2. 创建特性分支
+3. 提交更改
+4. 推送分支
+5. 创建 Pull Request
+
+详细请参阅 [贡献指南](docs/contributing.md)。
+
+---
+
+## 📄 License
+
+MIT License
+
+---
+
+*有问题？提交 [Issue](https://github.com/imysm/db-backup/issues) 或加入讨论！*
