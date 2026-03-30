@@ -22,6 +22,11 @@ func DefaultConfig() *model.Config {
 			MaxConcurrent: 5,
 			Timeout:       2 * time.Hour,
 		},
+		Database: model.AppDatabaseConfig{
+			Type:     "sqlite",
+			DSN:      "/var/lib/db-backup/db-backup.db",
+			MaxConns: 10,
+		},
 		Log: model.LogConfig{
 			Level:  "info",
 			Format: "console",

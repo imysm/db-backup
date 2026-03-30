@@ -9,6 +9,11 @@ global:
   api_keys:
     - "default-api-key-change-me"
 
+database:
+  type: sqlite
+  dsn: /var/lib/db-backup/db-backup.db
+  max_conns: 10
+
 log:
   level: info
   format: console

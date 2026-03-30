@@ -40,14 +40,11 @@ dist/
 ### 2. 启动后端并指定静态文件目录
 
 ```bash
-# 方式一：命令行参数
-./db-backup -config config.yaml -static ./web/dist
+# 方式一：命令行参数（推荐）
+./db-backup -web -config config.yaml -static ./web/dist -port 8080
 
 # 方式二：配置文件
-# config.yaml 中配置 static_path
-
-# 方式三：环境变量
-DB_BACKUP_STATIC_PATH=./web/dist ./db-backup
+# config.yaml 中配置 database 和 static 相关参数
 ```
 
 ### 3. 访问

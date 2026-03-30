@@ -165,9 +165,17 @@ type GlobalConfig struct {
 
 // Config 完整配置
 type Config struct {
-	Global GlobalConfig `yaml:"global" json:"global"`
-	Tasks  []BackupTask `yaml:"tasks" json:"tasks"`
-	Log    LogConfig    `yaml:"log" json:"log"`
+	Global   GlobalConfig     `yaml:"global" json:"global"`
+	Database AppDatabaseConfig `yaml:"database" json:"database"` // Web API 数据库
+	Tasks    []BackupTask    `yaml:"tasks" json:"tasks"`
+	Log      LogConfig       `yaml:"log" json:"log"`
+}
+
+// AppDatabaseConfig Web API 数据库配置
+type AppDatabaseConfig struct {
+	Type     string `yaml:"type" json:"type"`           // sqlite/mysql/postgres
+	DSN      string `yaml:"dsn" json:"dsn"`             // 连接字符串
+	MaxConns int    `yaml:"max_conns" json:"max_conns"` // 最大连接数
 }
 
 // LogConfig 日志配置
