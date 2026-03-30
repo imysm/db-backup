@@ -102,6 +102,18 @@ func (e *PostgresExecutor) Backup(ctx context.Context, task *model.BackupTask, w
 
 	// pg_dump -Fc 格式自带压缩，不需要额外压缩
 
+	// 处理加密
+	if task.Storage.Encryption.Enabled {
+		encryptedPath, err := EncryptBackupFile(filePath, task.Storage.Encryption)
+		if err != nil {
+			return failResult(task.ID, traceID, startTime, fmt.Errorf("加密备份文件失败: %w", err)), err
+		}
+		filePath = encryptedPath
+		if writer != nil {
+			writer.WriteString(fmt.Sprintf("[%s] 加密完成: %s\n", time.Now().Format("15:04:05"), filePath))
+		}
+	}
+
 	// 获取文件信息
 	fileInfo, err := os.Stat(filePath)
 	if err != nil {
