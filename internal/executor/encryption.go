@@ -37,19 +37,14 @@ type EncryptionResult struct {
 
 // DecryptFile 解密文件
 func DecryptFile(inputPath, outputPath, keyHex string) error {
-	key, err := hex.DecodeString(keyHex)
-	if err != nil {
-		return fmt.Errorf("invalid key format: %w", err)
+	// 验证密钥（必须是 32 字节，不允许填充/截断）
+	if err := ValidateEncryptionKey(keyHex); err != nil {
+		return err
 	}
 
-	// 确保密钥是32字节
-	if len(key) < 32 {
-		// 填充密钥到32字节
-		padded := make([]byte, 32)
-		copy(padded, key)
-		key = padded
-	} else if len(key) > 32 {
-		key = key[:32]
+	key, err := hex.DecodeString(keyHex)
+	if err != nil {
+		return fmt.Errorf("密钥格式错误: %w", err)
 	}
 
 	block, err := aes.NewCipher(key)
@@ -102,18 +97,14 @@ func DecryptFile(inputPath, outputPath, keyHex string) error {
 
 // EncryptFile 加密文件
 func EncryptFile(inputPath, outputPath, keyHex string) error {
-	key, err := hex.DecodeString(keyHex)
-	if err != nil {
-		return fmt.Errorf("invalid key format: %w", err)
+	// 验证密钥（必须是 32 字节，不允许填充/截断）
+	if err := ValidateEncryptionKey(keyHex); err != nil {
+		return err
 	}
 
-	// 确保密钥是32字节
-	if len(key) < 32 {
-		padded := make([]byte, 32)
-		copy(padded, key)
-		key = padded
-	} else if len(key) > 32 {
-		key = key[:32]
+	key, err := hex.DecodeString(keyHex)
+	if err != nil {
+		return fmt.Errorf("密钥格式错误: %w", err)
 	}
 
 	block, err := aes.NewCipher(key)
@@ -235,23 +226,19 @@ func VerifyEncryptedFile(filePath string, keyHex string, expectedKeyHash string)
 		return false, fmt.Errorf("不支持的加密版本: %d", version)
 	}
 
-	// 解析密钥
+	// 验证密钥（必须是 32 字节，不允许填充/截断）
+	if err := ValidateEncryptionKey(keyHex); err != nil {
+		return false, err
+	}
+
+	// 解析密钥（已验证为 32 字节）
 	key, err := hex.DecodeString(keyHex)
 	if err != nil {
 		return false, fmt.Errorf("密钥格式错误: %w", err)
 	}
 
-	// 统一处理密钥长度（与 EncryptFile/DecryptFile 一致）
+	// 直接使用 32 字节密钥
 	key32 := key
-	if len(key32) < 32 {
-		// 填充到 32 字节
-		padded := make([]byte, 32)
-		copy(padded, key32)
-		key32 = padded
-	} else if len(key32) > 32 {
-		// 截断到 32 字节
-		key32 = key32[:32]
-	}
 
 	// 如果提供了期望的密钥哈希，进行密钥验证
 	if expectedKeyHash != "" {
@@ -294,10 +281,20 @@ func VerifyEncryptedFile(filePath string, keyHex string, expectedKeyHash string)
 	return true, nil
 }
 
-// ValidateEncryptionKey 验证加密密钥是否有效（不为空）
+// ValidateEncryptionKey 验证加密密钥是否有效
+// 要求：非空，且长度必须为 32 字节（AES-256 标准）
+// 注意：hex 编码后的字符串长度是原始字节数的 2 倍，所以 hex 字符串长度应为 64
 func ValidateEncryptionKey(key string) error {
 	if key == "" {
 		return fmt.Errorf("加密密钥不能为空，请检查任务配置中的 EncryptKey 字段")
+	}
+	// hex 解码后应该是 32 字节
+	keyBytes, err := hex.DecodeString(key)
+	if err != nil {
+		return fmt.Errorf("加密密钥格式错误：必须是有效的 hex 字符串")
+	}
+	if len(keyBytes) != 32 {
+		return fmt.Errorf("加密密钥长度必须为 32 字节（AES-256），当前为 %d 字节", len(keyBytes))
 	}
 	return nil
 }
