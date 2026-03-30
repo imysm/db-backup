@@ -241,9 +241,15 @@ func VerifyEncryptedFile(filePath string, keyHex string, expectedKeyHash string)
 		return false, fmt.Errorf("密钥格式错误: %w", err)
 	}
 
-	// 统一取前 32 字节（与 EncryptFile 的 key 处理逻辑一致）
+	// 统一处理密钥长度（与 EncryptFile/DecryptFile 一致）
 	key32 := key
-	if len(key32) > 32 {
+	if len(key32) < 32 {
+		// 填充到 32 字节
+		padded := make([]byte, 32)
+		copy(padded, key32)
+		key32 = padded
+	} else if len(key32) > 32 {
+		// 截断到 32 字节
 		key32 = key32[:32]
 	}
 
