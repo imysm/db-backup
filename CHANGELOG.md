@@ -31,6 +31,40 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [0.2.0] - 2026-03-30
+
+### Security (P0/P1 高危修复)
+
+- **AES-256-GCM 加密增强**: 强制密钥长度必须为 32 字节，防止密钥验证形同虚设
+- **VerifyEncryptedFile 修复**: 统一密钥处理逻辑（不再偷偷填充/截断）
+- **LoginRateLimiter goroutine leak**: 修复 Stop() 无法等待清理协程退出的问题
+- **COS GetSignedURL 错误处理**: 空密钥时返回明确错误而非静默失败
+- **SQL Server Restore REPLACE**: 由用户明确控制，不再硬编码
+- **MySQL 密码传递**: CNF 文件权限 0600，使用 CreateTemp
+- **MongoDB 密码传递**: 通过 MONGOPASSWORD 环境变量传递
+- **SQL 注入防护**: sanitizeDBName + ValidateDatabaseName
+- **路径遍历防护**: ValidateBackupPath + filepath.Join
+
+### Features
+
+- **备份加密**: MySQL/PostgreSQL/SQLServer/MongoDB 全类型支持
+- **Throttle 限速**: CPU/IO 限速 + 并发控制
+- **PreScript/PostScript**: 备份前后脚本执行
+- **SQL Server Restorer**: 完整恢复器，支持链式恢复
+
+### Tests
+
+- 单元测试覆盖 29 个包全部通过
+- logger_test.go 修复 root 权限测试问题
+
+### Docs
+
+- 新增 `docs/security.md`: 安全功能完整文档
+- 新增 `docs/user-guide/security.md`: 用户安全配置指南
+- README.md 更新安全特性列表
+
+---
+
 ## [0.1.0] - 2026-03-18
 
 ### Added
@@ -50,5 +84,6 @@ All notable changes to this project will be documented in this file.
 - 备份恢复功能
 - 备份验证功能
 
-[Unreleased]: https://github.com/imysm/db-backup/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/imysm/db-backup/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/imysm/db-backup/releases/tag/v0.2.0
 [0.1.0]: https://github.com/imysm/db-backup/releases/tag/v0.1.0
