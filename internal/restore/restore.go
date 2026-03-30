@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
+	"github.com/imysm/db-backup/internal/executor"
 	"github.com/imysm/db-backup/internal/util"
 )
 
@@ -40,6 +41,7 @@ type RestoreRequest struct {
 	DBType      string // 数据库类型: postgres, mysql, mongodb
 	StorageType string // 存储类型: local, s3, oss, cos
 	NoRestore   bool   // 只校验不恢复
+	EncryptKey  string // 加密密钥（hex格式），用于解密加密的备份文件
 }
 
 // RestoreResult 恢复结果
@@ -205,6 +207,27 @@ func (r *MySQLRestorer) Restore(ctx context.Context, req *RestoreRequest) (*Rest
 		return result, nil
 	}
 
+	// 处理加密备份文件
+	backupFile := req.BackupFile
+	cleanupDecrypted := func() {}
+	if req.EncryptKey != "" {
+		// 验证密钥
+		if err := executor.ValidateEncryptionKey(req.EncryptKey); err != nil {
+			result.Error = err.Error()
+			return result, err
+		}
+
+		// 解密文件
+		decryptedPath := backupFile + ".decrypted"
+		if err := executor.DecryptFile(backupFile, decryptedPath, req.EncryptKey); err != nil {
+			result.Error = fmt.Sprintf("解密备份文件失败: %v", err)
+			return result, err
+		}
+		backupFile = decryptedPath
+		cleanupDecrypted = func() { os.Remove(decryptedPath) }
+		defer cleanupDecrypted()
+	}
+
 	// 构建 mysql 命令（使用 --defaults-extra-file 传递密码）
 	defaultsFile, err := os.CreateTemp("", "mysql_defaults_*.cnf")
 	if err != nil {
@@ -231,7 +254,7 @@ func (r *MySQLRestorer) Restore(ctx context.Context, req *RestoreRequest) (*Rest
 	cmd.Env = buildMinimalEnv(nil)
 
 	// 从文件输入
-	f, err := os.Open(req.BackupFile)
+	f, err := os.Open(backupFile)
 	if err != nil {
 		result.Error = err.Error()
 		return result, err

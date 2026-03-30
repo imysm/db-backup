@@ -4,12 +4,30 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
+	"crypto/sha256"
+	"encoding/binary"
 	"encoding/hex"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 )
+
+// sha256HashHex 计算 SHA256 校验和 (hex 编码)
+func sha256HashHex(data []byte) string {
+	h := sha256.Sum256(data)
+	return hex.EncodeToString(h[:])
+}
+
+// getUint64LE 从小端字节序读取 uint64
+func getUint64LE(data []byte) uint64 {
+	return binary.LittleEndian.Uint64(data)
+}
+
+// getUint32LE 从小端字节序读取 uint32
+func getUint32LE(data []byte) uint32 {
+	return binary.LittleEndian.Uint32(data)
+}
 
 // EncryptionResult 加密结果
 type EncryptionResult struct {
@@ -193,4 +211,87 @@ func DecryptBackup(inputPath, outputDir, keyHex string) (string, error) {
 	}
 
 	return decryptedPath, nil
+}
+
+// VerifyEncryptedFile 验证加密文件完整性
+// keyHex: 解密密钥（hex格式，用于验证是否能正确解密文件头部）
+// expectedKeyHash: 期望的密钥 SHA256 哈希（hex），可选，若为空则只验证文件格式
+func VerifyEncryptedFile(filePath string, keyHex string, expectedKeyHash string) (bool, error) {
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return false, fmt.Errorf("读取文件失败: %w", err)
+	}
+
+	if len(data) < 15 {
+		return false, fmt.Errorf("文件太小，不是有效的加密文件")
+	}
+
+	if string(data[:4]) != "DBEN" {
+		return false, fmt.Errorf("无效的 magic bytes")
+	}
+
+	version := data[4]
+	if version != 0x03 {
+		return false, fmt.Errorf("不支持的加密版本: %d", version)
+	}
+
+	// 解析密钥
+	key, err := hex.DecodeString(keyHex)
+	if err != nil {
+		return false, fmt.Errorf("密钥格式错误: %w", err)
+	}
+
+	// 统一取前 32 字节（与 EncryptFile 的 key 处理逻辑一致）
+	key32 := key
+	if len(key32) > 32 {
+		key32 = key32[:32]
+	}
+
+	// 如果提供了期望的密钥哈希，进行密钥验证
+	if expectedKeyHash != "" {
+		actualHash := sha256HashHex(key32)
+		if actualHash != expectedKeyHash {
+			return false, fmt.Errorf("密钥不匹配：提供的密钥哈希为 %s，与期望的 %s 不符", actualHash, expectedKeyHash)
+		}
+	}
+
+	// 尝试验证密钥是否能解密第一个块（如果文件非空）
+	nonceSize := int(data[5])
+	originalSize := getUint64LE(data[7:])
+
+	if originalSize > 0 && int(originalSize) < 1024*1024*1024 {
+		// 文件较小，尝试解密验证密钥正确性
+		blockCipher, err := aes.NewCipher(key32)
+		if err != nil {
+			return false, fmt.Errorf("密钥格式错误: %w", err)
+		}
+		gcm, err := cipher.NewGCM(blockCipher)
+		if err != nil {
+			return false, fmt.Errorf("创建 GCM 失败: %w", err)
+		}
+
+		// 跳过 header，尝试读取第一个加密块
+		offset := 15
+		if len(data) > offset+nonceSize+4 {
+			nonce := data[offset : offset+nonceSize]
+			blockLen := getUint32LE(data[offset+nonceSize : offset+nonceSize+4])
+			if blockLen > 0 && blockLen < 10*1024*1024 && int(blockLen) <= len(data)-offset-nonceSize-4 {
+				ciphertext := data[offset+nonceSize+4 : offset+nonceSize+4+int(blockLen)]
+				_, err := gcm.Open(nil, nonce, ciphertext, nil)
+				if err != nil {
+					return false, fmt.Errorf("密钥验证失败：无法用提供的密钥解密文件: %w", err)
+				}
+			}
+		}
+	}
+
+	return true, nil
+}
+
+// ValidateEncryptionKey 验证加密密钥是否有效（不为空）
+func ValidateEncryptionKey(key string) error {
+	if key == "" {
+		return fmt.Errorf("加密密钥不能为空，请检查任务配置中的 EncryptKey 字段")
+	}
+	return nil
 }
