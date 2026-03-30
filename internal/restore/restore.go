@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
+	"github.com/imysm/db-backup/internal/executor"
 	"github.com/imysm/db-backup/internal/util"
 )
 
@@ -31,15 +32,18 @@ const (
 
 // RestoreRequest 恢复请求
 type RestoreRequest struct {
-	BackupFile  string // 备份文件路径或存储key
-	TargetHost  string // 目标主机 (异机恢复时使用)
-	TargetPort  int    // 目标端口
-	TargetDB    string // 目标数据库
-	TargetUser  string // 目标用户
-	TargetPass  string // 目标密码
-	DBType      string // 数据库类型: postgres, mysql, mongodb
-	StorageType string // 存储类型: local, s3, oss, cos
-	NoRestore   bool   // 只校验不恢复
+	BackupFile   string // 备份文件路径或存储key
+	TargetHost   string // 目标主机 (异机恢复时使用)
+	TargetPort   int    // 目标端口
+	TargetDB     string // 目标数据库
+	TargetUser   string // 目标用户
+	TargetPass   string // 目标密码
+	DBType       string // 数据库类型: postgres, mysql, mongodb, sqlserver
+	StorageType  string // 存储类型: local, s3, oss, cos
+	NoRestore    bool   // 只校验不恢复
+	EncryptKey   string // 加密密钥（hex格式），用于解密加密的备份文件
+	RecoveryMode string // 恢复模式: recovery, norecovery, standby (SQL Server 链式恢复用)
+	Replace      bool   // 是否使用 REPLACE 选项覆盖已有数据库 (SQL Server)
 }
 
 // RestoreResult 恢复结果
@@ -205,6 +209,27 @@ func (r *MySQLRestorer) Restore(ctx context.Context, req *RestoreRequest) (*Rest
 		return result, nil
 	}
 
+	// 处理加密备份文件
+	backupFile := req.BackupFile
+	cleanupDecrypted := func() {}
+	if req.EncryptKey != "" {
+		// 验证密钥
+		if err := executor.ValidateEncryptionKey(req.EncryptKey); err != nil {
+			result.Error = err.Error()
+			return result, err
+		}
+
+		// 解密文件
+		decryptedPath := backupFile + ".decrypted"
+		if err := executor.DecryptFile(backupFile, decryptedPath, req.EncryptKey); err != nil {
+			result.Error = fmt.Sprintf("解密备份文件失败: %v", err)
+			return result, err
+		}
+		backupFile = decryptedPath
+		cleanupDecrypted = func() { os.Remove(decryptedPath) }
+		defer cleanupDecrypted()
+	}
+
 	// 构建 mysql 命令（使用 --defaults-extra-file 传递密码）
 	defaultsFile, err := os.CreateTemp("", "mysql_defaults_*.cnf")
 	if err != nil {
@@ -231,7 +256,7 @@ func (r *MySQLRestorer) Restore(ctx context.Context, req *RestoreRequest) (*Rest
 	cmd.Env = buildMinimalEnv(nil)
 
 	// 从文件输入
-	f, err := os.Open(req.BackupFile)
+	f, err := os.Open(backupFile)
 	if err != nil {
 		result.Error = err.Error()
 		return result, err

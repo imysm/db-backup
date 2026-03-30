@@ -490,8 +490,10 @@ func (s *OSSStorage) GetUsage(ctx context.Context, prefix string) (int64, error)
 
 // COSStorage 腾讯云 COS 存储
 type COSStorage struct {
-	client *cos.Client
-	bucket string
+	client   *cos.Client
+	bucket   string
+	secretID string
+	secretKey string
 }
 
 // NewCOSStorage 创建 COS 存储
@@ -508,7 +510,12 @@ func NewCOSStorage(cfg model.StorageConfig) (*COSStorage, error) {
 			SecretKey: cfg.SecretKey,
 		},
 	})
-	return &COSStorage{client: client, bucket: cfg.COSBucket}, nil
+	return &COSStorage{
+		client:    client,
+		bucket:    cfg.COSBucket,
+		secretID:  cfg.AccessKey,
+		secretKey: cfg.SecretKey,
+	}, nil
 }
 
 func (s *COSStorage) Type() string { return "cos" }
@@ -599,6 +606,26 @@ func (s *COSStorage) GetUsage(ctx context.Context, prefix string) (int64, error)
 		totalSize += record.FileSize
 	}
 	return totalSize, nil
+}
+
+// GetSignedURL 获取COS对象的签名URL（用于安全下载）
+func (s *COSStorage) GetSignedURL(ctx context.Context, key string, expiry int) (string, error) {
+	// 生成签名URL，默认过期时间300秒
+	if expiry <= 0 {
+		expiry = 300
+	}
+
+	// 使用 GetPresignedURL 需要提供永久密钥
+	if s.secretID == "" || s.secretKey == "" {
+		return "", fmt.Errorf("COS 签名 URL 需要配置 AccessKey 和 SecretKey，但当前未配置")
+	}
+
+	signedURL, err := s.client.Object.GetPresignedURL(ctx, http.MethodGet, key, s.secretID, s.secretKey, time.Duration(expiry)*time.Second, nil)
+	if err != nil {
+		return "", fmt.Errorf("生成签名URL失败: %w", err)
+	}
+
+	return signedURL.String(), nil
 }
 
 // ========== Helpers ==========

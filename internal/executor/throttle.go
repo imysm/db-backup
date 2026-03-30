@@ -2,133 +2,102 @@ package executor
 
 import (
 	"context"
-	"io"
+	"fmt"
+	"os"
+	"os/exec"
+	"strconv"
 	"sync"
-	"time"
+	"syscall"
 )
 
-// ThrottleConfig 限流配置
-type ThrottleConfig struct {
-	MaxBytesPerSecond int           // 最大字节/秒 (0 = 不限流)
-	WindowSize        time.Duration // 统计窗口大小
+// ThrottleController 限速控制器
+type ThrottleController struct {
+	semaphore   chan struct{} // 信号量用于并发控制
+	cpuLimit    int           // CPU 限制百分比
+	ioLimitMBPS int           // IO 限制 Mbps
+	mu          sync.Mutex    // 保护 activeCount
+	activeCount int           // 当前活跃的备份任务数
 }
 
-// ThrottleManager 备份限流管理器
-type ThrottleManager struct {
-	config     *ThrottleConfig
-	mu         sync.Mutex
-	currentQ   int64
-	windowStart time.Time
+// NewThrottleController 创建限速控制器
+func NewThrottleController(maxConcurrent, cpuLimit, ioLimitMBPS int) *ThrottleController {
+	tc := &ThrottleController{
+		semaphore:   make(chan struct{}, maxConcurrent),
+		cpuLimit:    cpuLimit,
+		ioLimitMBPS: ioLimitMBPS,
+	}
+	return tc
 }
 
-// NewThrottleManager 创建限流管理器
-func NewThrottleManager(config *ThrottleConfig) *ThrottleManager {
-	if config == nil {
-		config = &ThrottleConfig{
-			MaxBytesPerSecond: 0, // 默认不限流
-			WindowSize:        1 * time.Second,
+// Acquire 获取执行许可（阻塞直到可用）
+func (tc *ThrottleController) Acquire() {
+	tc.semaphore <- struct{}{}
+	tc.mu.Lock()
+	tc.activeCount++
+	tc.mu.Unlock()
+}
+
+// Release 释放执行许可
+func (tc *ThrottleController) Release() {
+	tc.mu.Lock()
+	tc.activeCount--
+	tc.mu.Unlock()
+	<-tc.semaphore
+}
+
+// ActiveCount 返回当前活跃的备份任务数
+func (tc *ThrottleController) ActiveCount() int {
+	tc.mu.Lock()
+	defer tc.mu.Unlock()
+	return tc.activeCount
+}
+
+// BuildThrottleCmd 构建带有限速前缀的命令
+// 例如: ionice -c 2 -n 7 mysqldump ...
+func (tc *ThrottleController) BuildThrottleCmd(ctx context.Context, cmd string, args ...string) *exec.Cmd {
+	if tc.ioLimitMBPS <= 0 {
+		return exec.CommandContext(ctx, cmd, args...)
+	}
+
+	// 使用 ionice 包装命令
+	return exec.CommandContext(ctx, "ionice", append([]string{"-c", "2", "-n", "7", cmd}, args...)...)
+}
+
+// ThrottleContext 返回一个带有进程级限速的上下文
+func ThrottleContext(ctx context.Context, cpuLimitPercent, ioLimitMBPS int) (context.Context, error) {
+	if cpuLimitPercent == 0 && ioLimitMBPS == 0 {
+		return ctx, nil
+	}
+
+	pid := os.Getpid()
+
+	// 设置 IO 调度类为最佳努力，优先级最低
+	if ioLimitMBPS > 0 {
+		if err := SetIOLimitClass(pid, 2, 7); err != nil {
+			fmt.Printf("警告: 设置 IO 限速失败: %v\n", err)
 		}
 	}
 
-	return &ThrottleManager{
-		config:     config,
-		windowStart: time.Now(),
-	}
-}
+	// 设置 nice 值
+	if cpuLimitPercent > 0 && cpuLimitPercent < 100 {
+		niceValue := 20 - (cpuLimitPercent * 20 / 100)
+		if niceValue < -20 {
+			niceValue = -20
+		}
+		if niceValue > 19 {
+			niceValue = 19
+		}
 
-// Wait 限速等待
-func (m *ThrottleManager) Wait(ctx context.Context, bytes int64) error {
-	if m.config.MaxBytesPerSecond <= 0 {
-		return nil // 不限流
-	}
-
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
-	elapsed := time.Since(m.windowStart)
-	if elapsed >= m.config.WindowSize {
-		// 重置窗口
-		m.currentQ = 0
-		m.windowStart = time.Now()
-	}
-
-	// 检查是否超限
-	targetQ := m.currentQ + bytes
-	if targetQ <= int64(m.config.MaxBytesPerSecond) {
-		m.currentQ = targetQ
-		return nil
-	}
-
-	// 需要等待
-	waitTime := m.config.WindowSize - elapsed
-	if waitTime > 0 {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-time.After(waitTime):
-			m.currentQ = bytes
-			m.windowStart = time.Now()
+		if err := syscall.Setpriority(syscall.PRIO_PROCESS, pid, niceValue); err != nil {
+			fmt.Printf("警告: 设置 CPU 限速失败: %v\n", err)
 		}
 	}
 
-	return nil
+	return ctx, nil
 }
 
-// SetLimit 动态调整限流
-func (m *ThrottleManager) SetLimit(bytesPerSecond int) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	m.config.MaxBytesPerSecond = bytesPerSecond
-}
-
-// GetLimit 获取当前限流值
-func (m *ThrottleManager) GetLimit() int {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	return m.config.MaxBytesPerSecond
-}
-
-// WriteCounter 计数写入器（用于限流）
-type WriteCounter struct {
-	w        io.Writer
-	throttle *ThrottleManager
-	ctx      context.Context
-	total    int64
-}
-
-// NewWriteCounter 创建计数写入器
-func NewWriteCounter(w io.Writer, throttle *ThrottleManager, ctx context.Context) *WriteCounter {
-	return &WriteCounter{
-		w:        w,
-		throttle: throttle,
-		ctx:      ctx,
-	}
-}
-
-// Write 限流写入
-func (wc *WriteCounter) Write(p []byte) (n int, err error) {
-	if err := wc.throttle.Wait(wc.ctx, int64(len(p))); err != nil {
-		return 0, err
-	}
-	n, err = wc.w.Write(p)
-	wc.total += int64(n)
-	return n, err
-}
-
-// Total 返回总写入字节数
-func (wc *WriteCounter) Total() int64 {
-	return wc.total
-}
-
-// GlobalThrottle 全局限流管理器
-var globalThrottle = NewThrottleManager(nil)
-
-// SetGlobalThrottle 设置全局限流
-func SetGlobalThrottle(bytesPerSecond int) {
-	globalThrottle.SetLimit(bytesPerSecond)
-}
-
-// GetGlobalThrottle 获取全局限流
-func GetGlobalThrottle() int {
-	return globalThrottle.GetLimit()
+// SetIOLimitClass 设置进程 IO 调度类
+func SetIOLimitClass(pid int, class, priority int) error {
+	cmd := exec.Command("ionice", "-p", strconv.Itoa(pid), "-c", strconv.Itoa(class), "-n", strconv.Itoa(priority))
+	return cmd.Run()
 }

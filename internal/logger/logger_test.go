@@ -59,7 +59,9 @@ func TestInit(t *testing.T) {
 	})
 
 	t.Run("invalid log file path", func(t *testing.T) {
-		err := Init("/nonexistent/dir/test.log", "info")
+		// 使用 /proc/self/fd/999999 这样的不存在且无法创建的路径
+		// 在 root 下 /nonexistent/dir 也能创建，所以用更可靠的路径
+		err := Init("/proc/self/fd/999999/test.log", "info")
 		if err == nil {
 			t.Error("expected error for invalid log file path")
 		}

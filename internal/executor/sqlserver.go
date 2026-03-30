@@ -130,6 +130,18 @@ func (e *SQLServerExecutor) Backup(ctx context.Context, task *model.BackupTask, 
 		}
 	}
 
+	// 处理加密
+	if task.Storage.Encryption.Enabled {
+		encryptedPath, err := EncryptBackupFile(filePath, task.Storage.Encryption)
+		if err != nil {
+			return failResult(task.ID, traceID, startTime, fmt.Errorf("加密备份文件失败: %w", err)), err
+		}
+		filePath = encryptedPath
+		if writer != nil {
+			writer.WriteString(fmt.Sprintf("[%s] 加密完成: %s\n", time.Now().Format("15:04:05"), filePath))
+		}
+	}
+
 	endTime := time.Now()
 	result.EndTime = endTime
 	result.Duration = endTime.Sub(startTime)
