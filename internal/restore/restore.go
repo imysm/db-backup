@@ -32,16 +32,18 @@ const (
 
 // RestoreRequest 恢复请求
 type RestoreRequest struct {
-	BackupFile  string // 备份文件路径或存储key
-	TargetHost  string // 目标主机 (异机恢复时使用)
-	TargetPort  int    // 目标端口
-	TargetDB    string // 目标数据库
-	TargetUser  string // 目标用户
-	TargetPass  string // 目标密码
-	DBType      string // 数据库类型: postgres, mysql, mongodb
-	StorageType string // 存储类型: local, s3, oss, cos
-	NoRestore   bool   // 只校验不恢复
-	EncryptKey  string // 加密密钥（hex格式），用于解密加密的备份文件
+	BackupFile   string // 备份文件路径或存储key
+	TargetHost   string // 目标主机 (异机恢复时使用)
+	TargetPort   int    // 目标端口
+	TargetDB     string // 目标数据库
+	TargetUser   string // 目标用户
+	TargetPass   string // 目标密码
+	DBType       string // 数据库类型: postgres, mysql, mongodb, sqlserver
+	StorageType  string // 存储类型: local, s3, oss, cos
+	NoRestore    bool   // 只校验不恢复
+	EncryptKey   string // 加密密钥（hex格式），用于解密加密的备份文件
+	RecoveryMode string // 恢复模式: recovery, norecovery, standby (SQL Server 链式恢复用)
+	Replace      bool   // 是否使用 REPLACE 选项覆盖已有数据库 (SQL Server)
 }
 
 // RestoreResult 恢复结果
