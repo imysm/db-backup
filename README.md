@@ -57,10 +57,12 @@ EOF
 
 ### 用户手册
 - [概述和核心概念](docs/user-guide/overview.md) - 系统核心概念
+- [Web 控制台使用指南](docs/user-guide/web-console.md) - 控制台完整操作手册
 - [任务管理](docs/user-guide/jobs.md) - 任务 CRUD + Cron 表达式
 - [备份记录](docs/user-guide/records.md) - 备份记录查询和管理
 - [数据恢复](docs/user-guide/restore.md) - 本机/异机/测试恢复
 - [通知配置](docs/user-guide/notifications.md) - 钉钉/飞书/邮件/企微配置
+- [安全配置](docs/user-guide/security.md) - 加密/登录/存储安全
 
 ### 运维指南
 - [部署指南](docs/ops-guide/deployment.md) - 单机/高可用/Docker/K8s
@@ -74,7 +76,9 @@ EOF
 - [开发规范](docs/dev-guide/contributing.md) - 开发规范 + 测试 + 提交
 
 ### 设计文档
+- [关于项目](docs/about.md) - 项目介绍、特性、架构、致谢
 - [系统设计](docs/DESIGN.md) - 系统架构设计
+- [安全功能文档](docs/security.md) - 安全功能详解
 
 ## 支持的数据库
 
