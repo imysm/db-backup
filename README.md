@@ -49,6 +49,10 @@ EOF
 
 详细步骤请参阅 [5 分钟快速上手](docs/quick-start.md)。
 
+### 前端构建
+
+- [前端打包说明](docs/frontend-build.md) - 前端构建、部署、常见问题
+
 ## 文档
 
 ### 快速入门
